@@ -6,11 +6,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 
-M_IP=210.125.84.51
-C_IP=192.168.88.200
-D_IP=10.10.20.51
+M_IP=10.10.10.50
+C_IP=192.168.88.50
+D_IP=10.10.20.50
 #RABBIT_PASS=secrete
-PASSWORD=fn!xo!ska!
+PASSWORD=PASS
 #ADMIN_TOKEN=ADMIN
 #MAIL=jshan@nm.gist.ac.kr
 
