@@ -10,7 +10,7 @@ M_IP=210.114.90.172
 C_IP=172.20.90.172
 D_IP=172.30.90.172
 #RABBIT_PASS=secrete
-PASSWORD=PASS
+PASSWORD=fn!xo!ska!
 #ADMIN_TOKEN=ADMIN
 #MAIL=jshan@nm.gist.ac.kr
 
@@ -49,7 +49,7 @@ openstack service create --name neutron \
 
 #4.Create the Networking service API endpoints:
 openstack endpoint create --region RegionOne \
-  network public http://$C_IP:9696
+  network public http://$M_IP:9696
 
 openstack endpoint create --region RegionOne \
   network internal http://$C_IP:9696
@@ -76,9 +76,8 @@ notify_nova_on_port_status_changes = True\n\
 notify_nova_on_port_data_changes = True\n\
 router_distributed = True/g" /etc/neutron/neutron.conf
 
-sed -i "s/#rabbit_host = localhost/rabbit_host = $C_IP\n\
-rabbit_userid = openstack\n\
-rabbit_password = $PASSWORD/g" /etc/neutron/neutron.conf
+#◦In the [DEFAULT] section, configure RabbitMQ message queue access:
+sed -i "s/#transport_url = <None>/transport_url = rabbit:\/\/openstack:$PASSWORD@$C_IP/g" /etc/neutron/neutron.conf
 
 sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$C_IP:5000\n\
 auth_url = http:\/\/$C_IP:35357\n\
@@ -89,6 +88,7 @@ user_domain_name = default\n\
 project_name = service\n\
 username = neutron\n\
 password = $PASSWORD/g" /etc/neutron/neutron.conf
+
 
 sed -i "s/#auth_url = <None>/auth_url = http:\/\/$C_IP:35357\n\
 auth_type = password\n\
@@ -101,7 +101,7 @@ password = $PASSWORD/g" /etc/neutron/neutron.conf
 
 
 #•Edit the /etc/neutron/plugins/ml2/ml2_conf.ini file and complete the following actions:
-sed -i "s/#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vxlan\n\
+sed -i "s/#type_drivers = local,flat,vlan,gre,vxlan,geneve/type_drivers = flat,vlan,vxlan\n\
 tenant_network_types = vxlan\n\
 mechanism_drivers = openvswitch,l2population\n\
 extension_drivers = port_security/g" /etc/neutron/plugins/ml2/ml2_conf.ini
@@ -161,10 +161,8 @@ sed -i "s/#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = METADAT
 
 #•Edit the /etc/nova/nova.conf file and complete the following actions:
 #◦In the [neutron] section, configure access parameters:
-sed -i "s/auth_strategy = keystone/auth_strategy = keystone\n\
-\n\
-[neutron]\n\
-url = http:\/\/$C_IP:9696\n\
+
+sed -i "s/#url=http:\/\/127.0.0.1:9696/url = http:\/\/$C_IP:9696\n\
 auth_url = http:\/\/$C_IP:35357\n\
 auth_type = password\n\
 project_domain_name = default\n\
@@ -173,8 +171,9 @@ region_name = RegionOne\n\
 project_name = service\n\
 username = neutron\n\
 password = $PASSWORD\n\
-service_metadata_proxy = True\n\
+service_metadata_proxy = true\n\
 metadata_proxy_shared_secret = METADATA_SECRET/g" /etc/nova/nova.conf
+
 
 
 #Finalize installation
