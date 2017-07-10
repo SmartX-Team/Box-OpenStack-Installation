@@ -6,11 +6,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 
-M_IP=10.10.10.52
-C_IP=10.10.20.201
-D_IP=10.10.30.52
-CTR_M_IP=10.10.10.51
-CTR_C_IP=10.10.20.200
+M_IP=210.114.90.170
+C_IP=172.20.90.170
+D_IP=172.30.90.170
+CTR_M_IP=210.114.90.172
+CTR_C_IP=172.20.90.172
 #RABBIT_PASS=secrete
 PASSWORD=PASS
 #ADMIN_TOKEN=ADMIN
@@ -24,21 +24,16 @@ PASSWORD=PASS
 #1.Install the packages:
 sudo apt-get install -y nova-compute
 
+
 #2.Edit the /etc/nova/nova.conf file and complete the following actions:
-sed -i "s/enabled_apis=osapi_compute,metadata/enabled_apis=ec2,osapi_compute,metadata\n\
-rpc_backend = rabbit\n\
-auth_strategy = keystone\n\
-my_ip = $C_IP\n\
-use_neutron = True\n\
-firewall_driver = nova.virt.firewall.NoopFirewallDriver\n\
-\n\
-[oslo_messaging_rabbit]\n\
-rabbit_host = $CTR_C_IP\n\
-rabbit_userid = openstack\n\
-rabbit_password = $PASSWORD\n\
-\n\
-[keystone_authtoken]\n\
-auth_uri = http:\/\/$CTR_C_IP:5000\n\
+
+#◦In the [DEFAULT] section, configure RabbitMQ message queue access
+sed -i "s/#transport_url=<None>/transport_url = rabbit:\/\/openstack:$PASSWORD@$CTR_C_IP/g" /etc/nova/nova.conf
+
+#◦In the [api] and [keystone_authtoken] sections, configure Identity service access:
+sed -i "s/#auth_strategy=keystone/auth_strategy=keystone/g" /etc/nova/nova.conf
+
+sed -i "s/#auth_uri=<None>/auth_uri = http:\/\/$CTR_C_IP:5000\n\
 auth_url = http:\/\/$CTR_C_IP:35357\n\
 memcached_servers = $CTR_C_IP:11211\n\
 auth_type = password\n\
@@ -46,18 +41,40 @@ project_domain_name = default\n\
 user_domain_name = default\n\
 project_name = service\n\
 username = nova\n\
-password = $PASSWORD\n\
-\n\
-[vnc]\n\
-enabled = True\n\
-vncserver_listen = 0.0.0.0\n\
-vncserver_proxyclient_address = $C_IP\n\
-novncproxy_base_url = http:\/\/$CTR_M_IP:6080\/vnc_auto.html\n\
-\n\
-[glance]\n\
-api_servers = http:\/\/$CTR_C_IP:9292/g" /etc/nova/nova.conf
+password = $PASSWORD/g" /etc/nova/nova.conf
 
+#◦In the [DEFAULT] section, configure the my_ip option:
+sed -i "s/#my_ip=10.89.104.70/my_ip=$C_IP/g" /etc/nova/nova.conf
+
+#◦In the [DEFAULT] section, enable support for the Networking service:
+sed -i "s/#use_neutron=true/use_neutron = true/g" /etc/nova/nova.conf
+sed -i "s/#firewall_driver=<None>/firewall_driver = nova.virt.firewall.NoopFirewallDriver/g" /etc/nova/nova.conf
+
+#◦In the [vnc] section, enable and configure remote console access:
+sed -i "s/#enabled=true/enabled = true/g" /etc/nova/nova.conf
+sed -i "s/#vncserver_listen=127.0.0.1/vncserver_listen = 0.0.0.0/g" /etc/nova/nova.conf
+sed -i "s/#vncserver_proxyclient_address=127.0.0.1/vncserver_proxyclient_address = $C_IP/g" /etc/nova/nova.conf
+sed -i "s/#novncproxy_base_url=http:\/\/127.0.0.1:6080\/vnc_auto.html/novncproxy_base_url=http:\/\/$CTR_M_IP:6080\/vnc_auto.html/g" /etc/nova/nova.conf
+
+#◦In the [glance] section, configure the location of the Image service API:
+sed -i "s/#api_servers=<None>/api_servers = http:\/\/$CTR_C_IP:9292/g" /etc/nova/nova.conf
+
+#◦In the [oslo_concurrency] section, configure the lock path:
 sed -i "s/lock_path=\/var\/lock\/nova/lock_path = \/var\/lib\/nova\/tmp/g" /etc/nova/nova.conf
+
+sed -i "s/log_dir=\/var\/log\/nova/#log_dir/g" /etc/nova/nova.conf
+
+#◦In the [placement] section, configure the Placement API:
+sed -i "s/#os_region_name = openstack/os_region_name = RegionOne\n\
+project_domain_name = Default\n\
+project_name = service\n\
+auth_type = password\n\
+user_domain_name = Default\n\
+auth_url = http:\/\/$CTR_C_IP:35357\/v3\n\
+username = placement\n\
+password = $PASSWORD/g" /etc/nova/nova.conf
+
+
 
 #Finalize installation
 
