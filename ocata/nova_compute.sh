@@ -44,7 +44,7 @@ username = nova\n\
 password = $PASSWORD/g" /etc/nova/nova.conf
 
 #◦In the [DEFAULT] section, configure the my_ip option:
-sed -i "s/#my_ip=10.89.104.70/my_ip=$C_IP/g" /etc/nova/nova.conf
+sed -i "s/#my_ip=10.222.99.93/my_ip=$C_IP/g" /etc/nova/nova.conf
 
 #◦In the [DEFAULT] section, enable support for the Networking service:
 sed -i "s/#use_neutron=true/use_neutron = true/g" /etc/nova/nova.conf
@@ -65,7 +65,7 @@ sed -i "s/lock_path=\/var\/lock\/nova/lock_path = \/var\/lib\/nova\/tmp/g" /etc/
 sed -i "s/log_dir=\/var\/log\/nova/#log_dir/g" /etc/nova/nova.conf
 
 #◦In the [placement] section, configure the Placement API:
-sed -i "s/#os_region_name = openstack/os_region_name = RegionOne\n\
+sed -i "s/os_region_name = openstack/os_region_name = RegionOne\n\
 project_domain_name = Default\n\
 project_name = service\n\
 auth_type = password\n\

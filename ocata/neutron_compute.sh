@@ -56,8 +56,8 @@ password = $PASSWORD/g" /etc/neutron/neutron.conf
 #•Edit the /etc/nova/nova.conf file and complete the following actions:
 #◦In the [neutron] section, configure access parameters:
 
-sed -i "s/#url=http:\/\/127.0.0.1:9696/url = http:\/\/$C_IP:9696\n\
-auth_url = http:\/\/$C_IP:35357\n\
+sed -i "s/#url=http:\/\/127.0.0.1:9696/url = http:\/\/$CTR_C_IP:9696\n\
+auth_url = http:\/\/$CTR_C_IP:35357\n\
 auth_type = password\n\
 project_domain_name = default\n\
 user_domain_name = default\n\
