@@ -6,24 +6,24 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 
-M_IP=210.114.90.172
-C_IP=172.20.90.172
-D_IP=172.30.90.172
+# CH_M_INTERFACE_ADDRESS=210.125.84.51
+# CH_C_INTERFACE_ADDRESS=192.168.88.51
+# CH_D_INTERFACE_ADDRESS=10.10.20.51
 #RABBIT_PASS=secrete
-PASSWORD=PASS
+PASSWORD=fn!xo!ska!
 #ADMIN_TOKEN=ADMIN
 #MAIL=jshan@nm.gist.ac.kr
 
 
 #1.Install the packages:
-sudo apt-get install -y openstack-dashboard
+apt install -y openstack-dashboard
 
 #2.Edit the /etc/openstack-dashboard/local_settings.py file and complete the following actions:
-sed -i 's/OPENSTACK_HOST = "127.0.0.1"/OPENSTACK_HOST = "'$C_IP'"/g' /etc/openstack-dashboard/local_settings.py
+sed -i 's/OPENSTACK_HOST = "127.0.0.1"/OPENSTACK_HOST = "'$CH_C_INTERFACE_ADDRESS'"/g' /etc/openstack-dashboard/local_settings.py
 sed -i "s/ALLOWED_HOSTS = '\*'/ALLOWED_HOSTS = \['\*', \]/g" /etc/openstack-dashboard/local_settings.py
 sed -i "s/# memcached set CACHES to something like/# memcached set CACHES to something like\n\
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'/g" /etc/openstack-dashboard/local_settings.py
-sed -i "s/'LOCATION': '127.0.0.1:11211'/'LOCATION': '$C_IP:11211'/g" /etc/openstack-dashboard/local_settings.py
+sed -i "s/'LOCATION': '127.0.0.1:11211'/'LOCATION': '$CH_C_INTERFACE_ADDRESS:11211'/g" /etc/openstack-dashboard/local_settings.py
 sed -i "s/http:\/\/%s:5000\/v2.0/http:\/\/%s:5000\/v3/g" /etc/openstack-dashboard/local_settings.py
 
 sed -i 's/#OPENSTACK_API_VERSIONS = {/OPENSTACK_API_VERSIONS = {/g' /etc/openstack-dashboard/local_settings.py
@@ -43,8 +43,8 @@ sed -i "s/#OPENSTACK_KEYSTONE_MULTIDOMAIN_SUPPORT = False/OPENSTACK_KEYSTONE_MUL
 
 
 #permission Error Issue
-sudo chown www-data /var/lib/openstack-dashboard/secret_key
+chown www-data /var/lib/openstack-dashboard/secret_key
 
 #•Reload the web server configuration:
-service apache2 reload
+systemctl reload apache2.service
 
