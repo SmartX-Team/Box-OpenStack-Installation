@@ -6,11 +6,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 
-M_IP=210.114.90.172
-C_IP=172.20.90.172
-D_IP=172.30.90.172
+# CH_M_INTERFACE_ADDRESS=210.125.84.51
+# CH_C_INTERFACE_ADDRESS=192.168.88.51
+# CH_D_INTERFACE_ADDRESS=10.10.20.51
 #RABBIT_PASS=secrete
-PASSWORD=PASS
+PASSWORD=fn!xo!ska!
 #ADMIN_TOKEN=ADMIN
 #MAIL=jshan@nm.gist.ac.kr
 
@@ -19,10 +19,10 @@ PASSWORD=PASS
 
 
 #1.To create the database, complete these steps:
-cat << EOF | mysql -uroot -p$PASSWORD
+cat << EOF | mysql -uroot -p$MYSQL_ROOT_PASSWORD
 CREATE DATABASE glance;
-GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'localhost' IDENTIFIED BY '$PASSWORD';
-GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%' IDENTIFIED BY '$PASSWORD';
+GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'localhost' IDENTIFIED BY '$GLANCE_DB_PASSWORD';
+GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%' IDENTIFIED BY '$GLANCE_DB_PASSWORD';
 quit
 EOF
 
@@ -31,7 +31,7 @@ source admin-openrc.sh
 
 #3.To create the service credentials, complete these steps:
 #◦Create the glance user:
-openstack user create --domain default --password $PASSWORD glance
+openstack user create --domain default --password $OPENSTACK_GLANCE_USER_PASSWORD glance
 
 #◦Add the admin role to the glance user and service project:
 openstack role add --project service --user glance admin
@@ -41,36 +41,36 @@ openstack service create --name glance \
   --description "OpenStack Image" image
 
 #4.Create the Image service API endpoints:
-openstack endpoint create --region RegionOne \
-  image public http://$C_IP:9292
+openstack endpoint create --region $REGION_NAME \
+  image public http://$CH_C_INTERFACE_ADDRESS:9292
 
-openstack endpoint create --region RegionOne \
-  image internal http://$C_IP:9292
+openstack endpoint create --region $REGION_NAME \
+  image internal http://$CH_C_INTERFACE_ADDRESS:9292
 
-openstack endpoint create --region RegionOne \
-  image admin http://$C_IP:9292
+openstack endpoint create --region $REGION_NAME \
+  image admin http://$CH_C_INTERFACE_ADDRESS:9292
 
 
 
 #Install and configure components
 
 #1.Install the packages:
-sudo apt-get install -y glance
+apt install -y glance
 
 #2.Edit the /etc/glance/glance-api.conf file and complete the following actions:
 #◦In the [database] section, configure database access:
-sed -i "s/#connection = <None>/connection = mysql+pymysql:\/\/glance:$PASSWORD@$C_IP\/glance/g" /etc/glance/glance-api.conf
+sed -i "s/#connection = <None>/connection = mysql+pymysql:\/\/glance:$GLANCE_DB_PASSWORD@$CH_C_INTERFACE_ADDRESS\/glance/g" /etc/glance/glance-api.conf
 
 #◦In the [keystone_authtoken] and [paste_deploy] sections, configure Identity service access:
-sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$C_IP:5000\n\
-auth_url = http:\/\/$C_IP:35357\n\
-memcached_servers = $C_IP:11211\n\
+sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$CH_C_INTERFACE_ADDRESS:5000\n\
+auth_url = http:\/\/$CH_C_INTERFACE_ADDRESS:35357\n\
+memcached_servers = $CH_C_INTERFACE_ADDRESS:11211\n\
 auth_type = password\n\
 project_domain_name = default\n\
 user_domain_name = default\n\
 project_name = service\n\
 username = glance\n\
-password = $PASSWORD\n/g" /etc/glance/glance-api.conf
+password = $OPENSTACK_GLANCE_USER_PASSWORD\n/g" /etc/glance/glance-api.conf
 
 sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-api.conf
 
@@ -82,18 +82,18 @@ sed -i "s/#filesystem_store_datadir = \/var\/lib\/glance\/images/filesystem_stor
 
 #3.Edit the /etc/glance/glance-registry.conf file and complete the following actions:
 #◦In the [database] section, configure database access:
-sed -i "s/#connection = <None>/connection = mysql+pymysql:\/\/glance:$PASSWORD@$C_IP\/glance/g" /etc/glance/glance-registry.conf
+sed -i "s/#connection = <None>/connection = mysql+pymysql:\/\/glance:$GLANCE_DB_PASSWORD@$CH_C_INTERFACE_ADDRESS\/glance/g" /etc/glance/glance-registry.conf
 
 #◦In the [keystone_authtoken] and [paste_deploy] sections, configure Identity service access:
-sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$C_IP:5000\n\
-auth_url = http:\/\/$C_IP:35357\n\
-memcached_servers = $C_IP:11211\n\
+sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$CH_C_INTERFACE_ADDRESS:5000\n\
+auth_url = http:\/\/$CH_C_INTERFACE_ADDRESS:35357\n\
+memcached_servers = $CH_C_INTERFACE_ADDRESS:11211\n\
 auth_type = password\n\
 project_domain_name = default\n\
 user_domain_name = default\n\
 project_name = service\n\
 username = glance\n\
-password = $PASSWORD\n/g" /etc/glance/glance-registry.conf
+password = $OPENSTACK_GLANCE_USER_PASSWORD\n/g" /etc/glance/glance-registry.conf
 
 sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-registry.conf
 
@@ -102,8 +102,8 @@ sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-registry.co
 su -s /bin/sh -c "glance-manage db_sync" glance
 
 # Restart the Image services:
-service glance-registry restart
-service glance-api restart
+systemctl restart glance-registry.service
+systemctl restart glance-api.service
 
 
 

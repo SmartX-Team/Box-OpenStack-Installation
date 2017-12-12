@@ -6,11 +6,11 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 
-M_IP=210.114.90.172
-C_IP=172.20.90.172
-D_IP=172.30.90.172
+# CH_M_INTERFACE_ADDRESS=210.125.84.51
+# CH_C_INTERFACE_ADDRESS=192.168.88.51
+# CH_D_INTERFACE_ADDRESS=10.10.20.51
 #RABBIT_PASS=secrete
-PASSWORD=PASS
+PASSWORD=fn!xo!ska!
 #ADMIN_TOKEN=ADMIN
 #MAIL=jshan@nm.gist.ac.kr
 
@@ -25,10 +25,10 @@ net.ipv4.conf.default.rp_filter=0" /etc/sysctl.conf
 
 
 #1.To create the database, complete these steps:
-cat << EOF | mysql -uroot -p$PASSWORD
+cat << EOF | mysql -uroot -p$MYSQL_ROOT_PASSWORD
 CREATE DATABASE neutron;
-GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'localhost' IDENTIFIED BY '$PASSWORD';
-GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'%' IDENTIFIED BY '$PASSWORD';
+GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'localhost' IDENTIFIED BY '$NEUTRON_DB_PASSWORD';
+GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'%' IDENTIFIED BY '$NEUTRON_DB_PASSWORD';
 quit
 EOF
 
@@ -37,7 +37,7 @@ source admin-openrc.sh
 
 #3.To create the service credentials, complete these steps:
 #◦Create the neutron user:
-openstack user create --domain default --password $PASSWORD neutron
+openstack user create --domain default --password $OPENSTACK_NEUTRON_USER_PASSWORD neutron
 
 #◦Add the admin role to the neutron user:
 openstack role add --project service --user neutron admin
@@ -48,25 +48,25 @@ openstack service create --name neutron \
 
 
 #4.Create the Networking service API endpoints:
-openstack endpoint create --region RegionOne \
-  network public http://$M_IP:9696
+openstack endpoint create --region $REGION_NAME \
+  network public http://$CH_M_INTERFACE_ADDRESS:9696
 
-openstack endpoint create --region RegionOne \
-  network internal http://$C_IP:9696
+openstack endpoint create --region $REGION_NAME \
+  network internal http://$CH_C_INTERFACE_ADDRESS:9696
 
-openstack endpoint create --region RegionOne \
-  network admin http://$C_IP:9696
+openstack endpoint create --region $REGION_NAME \
+  network admin http://$CH_C_INTERFACE_ADDRESS:9696
 
 
 #Install the components
-sudo apt-get install -y neutron-server neutron-plugin-ml2 \
+apt install -y neutron-server neutron-plugin-ml2 \
   neutron-openvswitch-agent neutron-l3-agent neutron-dhcp-agent \
   neutron-metadata-agent
 
 
 
 ##•Edit the /etc/neutron/neutron.conf file and complete the following actions:
-sed -i "s/connection = sqlite:\/\/\/\/var\/lib\/neutron\/neutron.sqlite/connection = mysql+pymysql:\/\/neutron:$PASSWORD@$C_IP\/neutron/g" /etc/neutron/neutron.conf
+sed -i "s/connection = sqlite:\/\/\/\/var\/lib\/neutron\/neutron.sqlite/connection = mysql+pymysql:\/\/neutron:$NEUTRON_DB_PASSWORD@$CH_C_INTERFACE_ADDRESS\/neutron/g" /etc/neutron/neutron.conf
 
 sed -i "s/#service_plugins =/service_plugins = router\n\
 allow_overlapping_ips = True\n\
@@ -77,27 +77,27 @@ notify_nova_on_port_data_changes = True\n\
 router_distributed = True/g" /etc/neutron/neutron.conf
 
 #◦In the [DEFAULT] section, configure RabbitMQ message queue access:
-sed -i "s/#transport_url = <None>/transport_url = rabbit:\/\/openstack:$PASSWORD@$C_IP/g" /etc/neutron/neutron.conf
+sed -i "s/#transport_url = <None>/transport_url = rabbit:\/\/openstack:$RABBITMQ_PASSWORD@$CH_C_INTERFACE_ADDRESS/g" /etc/neutron/neutron.conf
 
-sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$C_IP:5000\n\
-auth_url = http:\/\/$C_IP:35357\n\
-memcached_servers = $C_IP:11211\n\
+sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$CH_C_INTERFACE_ADDRESS:5000\n\
+auth_url = http:\/\/$CH_C_INTERFACE_ADDRESS:35357\n\
+memcached_servers = $CH_C_INTERFACE_ADDRESS:11211\n\
 auth_type = password\n\
 project_domain_name = default\n\
 user_domain_name = default\n\
 project_name = service\n\
 username = neutron\n\
-password = $PASSWORD/g" /etc/neutron/neutron.conf
+password = $OPENSTACK_NEUTRON_USER_PASSWORD/g" /etc/neutron/neutron.conf
 
 
-sed -i "s/#auth_url = <None>/auth_url = http:\/\/$C_IP:35357\n\
+sed -i "s/#auth_url = <None>/auth_url = http:\/\/$CH_C_INTERFACE_ADDRESS:35357\n\
 auth_type = password\n\
 project_domain_name = default\n\
 user_domain_name = default\n\
-region_name = RegionOne\n\
+region_name = $REGION_NAME\n\
 project_name = service\n\
 username = nova\n\
-password = $PASSWORD/g" /etc/neutron/neutron.conf
+password = $OPENSTACK_NOVA_USER_PASSWORD/g" /etc/neutron/neutron.conf
 
 
 #•Edit the /etc/neutron/plugins/ml2/ml2_conf.ini file and complete the following actions:
@@ -116,7 +116,7 @@ enable_ipset = True/g" /etc/neutron/plugins/ml2/ml2_conf.ini
 
 
 #.In the openvswitch_agent.ini file, configure the Open vSwitch agent:
-sed -i "s/#local_ip = <None>/local_ip = $D_IP/g" /etc/neutron/plugins/ml2/openvswitch_agent.ini
+sed -i "s/#local_ip = <None>/local_ip = $CH_D_INTERFACE_ADDRESS/g" /etc/neutron/plugins/ml2/openvswitch_agent.ini
 
 sed -i "s/#tunnel_types =/tunnel_types = vxlan\n\
 l2_population = True/g" /etc/neutron/plugins/ml2/openvswitch_agent.ini
@@ -154,7 +154,7 @@ pkill dnsmasq
 
 
 #.In the metadata_agent.ini file, configure the metadata agent:
-sed -i "s/#nova_metadata_ip = 127.0.0.1/nova_metadata_ip = $C_IP/g" /etc/neutron/metadata_agent.ini
+sed -i "s/#nova_metadata_ip = 127.0.0.1/nova_metadata_ip = $CH_C_INTERFACE_ADDRESS/g" /etc/neutron/metadata_agent.ini
 
 sed -i "s/#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = METADATA_SECRET/g" /etc/neutron/metadata_agent.ini
 
@@ -162,15 +162,15 @@ sed -i "s/#metadata_proxy_shared_secret =/metadata_proxy_shared_secret = METADAT
 #•Edit the /etc/nova/nova.conf file and complete the following actions:
 #◦In the [neutron] section, configure access parameters:
 
-sed -i "s/#url=http:\/\/127.0.0.1:9696/url = http:\/\/$C_IP:9696\n\
-auth_url = http:\/\/$C_IP:35357\n\
+sed -i "s/#url=http:\/\/127.0.0.1:9696/url = http:\/\/$CH_C_INTERFACE_ADDRESS:9696\n\
+auth_url = http:\/\/$CH_C_INTERFACE_ADDRESS:35357\n\
 auth_type = password\n\
 project_domain_name = default\n\
 user_domain_name = default\n\
-region_name = RegionOne\n\
+region_name = $REGION_NAME\n\
 project_name = service\n\
 username = neutron\n\
-password = $PASSWORD\n\
+password = $OPENSTACK_NEUTRON_USER_PASSWORD\n\
 service_metadata_proxy = true\n\
 metadata_proxy_shared_secret = METADATA_SECRET/g" /etc/nova/nova.conf
 
@@ -182,13 +182,13 @@ su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf \
 
 
 #Restart the Compute service:
-service nova-api restart
-service neutron-server restart
-service openvswitch-switch restart
-service neutron-openvswitch-agent restart
-service neutron-l3-agent restart
-service neutron-dhcp-agent restart
-service neutron-metadata-agent restart
+systemctl restart nova-api.service
+systemctl restart neutron-server.service
+systemctl restart openvswitch-switch.service
+systemctl restart neutron-openvswitch-agent.service
+systemctl restart neutron-l3-agent.service
+systemctl restart neutron-dhcp-agent.service
+systemctl restart neutron-metadata-agent.service
 
 
 
