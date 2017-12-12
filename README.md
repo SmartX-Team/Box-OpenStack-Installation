@@ -7,7 +7,6 @@ Automated OpenStack Services Installation Scripts focusing on OpenStack Newton, 
 Ubuntu 16.04 LTS
 
 ## How to Use
-$ vim keystone.sh 
-Modify parameters such as Interfaces (ex., Management, Control and Data) and passwords, and run it.
-$ ./keystone.sh
+Update env_setup.sh file to provide required parameters before running it.
+
 Copy utils/conf_feeder.sh file to /usr/local/bin before execution.
