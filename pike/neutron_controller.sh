@@ -11,6 +11,8 @@ C_IP=
 D_IP=
 #RABBIT_PASS=secrete
 PASSWORD=PASS
+MTU=1400
+
 #ADMIN_TOKEN=ADMIN
 #MAIL=jshan@nm.gist.ac.kr
 
@@ -45,6 +47,7 @@ openstack role add --project service --user neutron admin
 #◦Create the neutron service entity:
 openstack service create --name neutron \
   --description "OpenStack Networking" network
+
 
 
 #4.Create the Networking service API endpoints:
@@ -200,7 +203,7 @@ sed -i "s/#enable_isolated_metadata = false/enable_isolated_metadata = True/g" /
 sed -i "s/#interface_driver = <None>/interface_driver = openvswitch/g" /etc/neutron/dhcp_agent.ini
 
 touch /etc/neutron/dnsmasq-neutron.conf
-echo "dhcp-option-force=26,1400" >> /etc/neutron/dnsmasq-neutron.conf
+echo "dhcp-option-force=26,$MTU" >> /etc/neutron/dnsmasq-neutron.conf
 
 sed -i "s/#dnsmasq_config_file =/dnsmasq_config_file = \/etc\/neutron\/dnsmasq-neutron.conf/g" /etc/neutron/dhcp_agent.ini
 
