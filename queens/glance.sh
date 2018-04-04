@@ -61,46 +61,54 @@ sudo apt-get install -y glance
 #◦In the [database] section, configure database access:
 #sed -i "s/#connection = <None>/connection = mysql+pymysql:\/\/glance:$PASSWORD@$C_IP\/glance/g" /etc/glance/glance-api.conf
 
-sed -i "/s/connection = sqlite:\/\/\/\/var\/lib\/glance\/glance.sqlite/connection = mysql+pymysql:\/\/glance:$PASSWORD@$C_IP\/glance/g" /etc/glance/glance-api.conf
+
+./conf_feeder.sh /etc/glance/glance-api.conf set database connection=mysql+pymysql://glance:$PASSWORD@$C_IP/glance
+
 
 
 #◦In the [keystone_authtoken] and [paste_deploy] sections, configure Identity service access:
-sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$C_IP:5000\n\
-auth_url = http:\/\/$C_IP:35357\n\
-memcached_servers = $C_IP:11211\n\
-auth_type = password\n\
-project_domain_name = default\n\
-user_domain_name = default\n\
-project_name = service\n\
-username = glance\n\
-password = $PASSWORD\n/g" /etc/glance/glance-api.conf
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken auth_uri=http://$C_IP:5000
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken auth_url=http://$C_IP:5000
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken memcached_servers=$C_IP:11211
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken auth_type=password
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken project_domain_name=default
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken user_domain_name=default
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken project_name=service
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken username=glance
+./conf_feeder.sh /etc/glance/glance-api.conf set keystone_authtoken password=$PASSWORD
 
-sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-api.conf
+
+./conf_feeder.sh /etc/glance/glance-api.conf set paste_deploy flavor=keystone
+#sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-api.conf
+
 
 #◦In the [glance_store] section, configure the local file system store and location of image files:
-sed -i "s/#stores = file,http/stores = file,http/g" /etc/glance/glance-api.conf
-sed -i "s/#default_store = file/default_store = file/g" /etc/glance/glance-api.conf
-sed -i "s/#filesystem_store_datadir = \/var\/lib\/glance\/images/filesystem_store_datadir = \/var\/lib\/glance\/images/g" /etc/glance/glance-api.conf
+./conf_feeder.sh /etc/glance/glance-api.conf set glance_store stores=file,http
+./conf_feeder.sh /etc/glance/glance-api.conf set glance_store default_store=file
+./conf_feeder.sh /etc/glance/glance-api.conf set glance_store filesystem_store_datadir=/var/lib/glance/images
+
 
 
 #3.Edit the /etc/glance/glance-registry.conf file and complete the following actions:
 #◦In the [database] section, configure database access:
 #sed -i "s/#connection = <None>/connection = mysql+pymysql:\/\/glance:$PASSWORD@$C_IP\/glance/g" /etc/glance/glance-registry.conf
+./conf_feeder.sh /etc/glance/glance-registry.conf set database connection=mysql+pymysql://glance:$PASSWORD@$C_IP/glance
 
-sed -i "/s/connection = sqlite:\/\/\/\/var\/lib\/glance\/glance.sqlite/connection = mysql+pymysql:\/\/glance:$PASSWORD@$C_IP\/glance/g" /etc/glance/glance-registry.conf
 
 #◦In the [keystone_authtoken] and [paste_deploy] sections, configure Identity service access:
-sed -i "s/#auth_uri = <None>/auth_uri = http:\/\/$C_IP:5000\n\
-auth_url = http:\/\/$C_IP:35357\n\
-memcached_servers = $C_IP:11211\n\
-auth_type = password\n\
-project_domain_name = default\n\
-user_domain_name = default\n\
-project_name = service\n\
-username = glance\n\
-password = $PASSWORD\n/g" /etc/glance/glance-registry.conf
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken auth_uri=http://$C_IP:5000
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken auth_url=http://$C_IP:5000
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken memcached_servers=$C_IP:11211
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken auth_type=password
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken project_domain_name=default
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken user_domain_name=default
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken project_name=service
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken username=glance
+./conf_feeder.sh /etc/glance/glance-registry.conf set keystone_authtoken password=$PASSWORD
 
-sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-registry.conf
+
+./conf_feeder.sh /etc/glance/glance-registry.conf set paste_deploy flavor=keystone
+#sed -i "s/#flavor = keystone/flavor = keystone/g" /etc/glance/glance-registry.conf
 
 
 #4.Populate the Image service database:
